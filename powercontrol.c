@@ -45,24 +45,14 @@ before running it.
 
 /*
 
-Window *window; 
-xdo_t *xdo; 
-xdo_search_t search = {0}; 
-int numResults = 0; 
 
-xdo = xdo_new(":0.0"); 
-search.winname = "Mozilla Firefox"; 
-search.winclassname = "Mozilla Firefox"; 
-search.winclass = "Mozilla Firefox"; 
-search.require = SEARCH_ANY; 
-search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
-search.max_depth = -1; 
+ 
 
-xdo_window_search(xdo, &search, &window, &numResults); 
-printf("Found %d windows.\n", numResults); 
-if (numResults > 0) { 
-xdo_keysequence(xdo, *window, "ctrl+l", 100000); 
-} 
+
+
+ 
+
+
 
 */
  
@@ -108,8 +98,22 @@ int status;
 int status_off;
 int no_ser_count = 0;
 
+Window *window; 
+xdo_t *xdo; 
+xdo_search_t search = {0};
+int numResults = 0;
+
+void send_key(char* key){
+	if (numResults > 0) { 
+		xdo_keysequence(xdo, *window, key, 10); 
+	} 
+}
+
 void serial_task(void){
-	
+	if(numResult < 1){
+		xdo_window_search(xdo, &search, &window, &numResults);
+		printf("Found %d windows.\n", numResults); 
+	}
    
     if(serialDataAvail(ser)>0){
         unsigned char rx = serialGetchar(ser);
@@ -169,7 +173,7 @@ void serial_task(void){
                     //*/
                     case SERIALenter:{
 						printf("SERIALenter\n");
-
+						send_key("Return");
                         system("mpc toggle");
 
 
@@ -188,43 +192,54 @@ void serial_task(void){
                     }
                     case SERIAL_1:{//prev album
 						printf("SERIAL_1\n");
-                        
+                        send_key("F4");
                         break;
                     }
                     case SERIAL_2:{//next album
 						printf("SERIAL_2\n");
+                        send_key("F5");
                         
                         break;
                     }
                     case SERIAL_3:{//repeat
 						printf("SERIAL_3\n");
                         //system("mpc repeat");
+                        
+                        //send_key("3");
                         break;
                     }
                     case SERIAL_4:{//prev artist
 						printf("SERIAL_4\n");
+						
+                        send_key("F6");
                         //system("mpc clear");
                         //CurrentPlayList = prev_artist(CurrentPlayList);
                         break;
                     }
                     case SERIAL_5:{//next artist
 						printf("SERIAL_5\n");
+                        send_key("F7");
                         //system("mpc clear");
                         //CurrentPlayList = next_artist(CurrentPlayList);
                         break;
                     }
                     case SERIAL_6:{ // single
 						printf("SERIAL_6\n");
+                        //send_key("1");
                         //system("mpc single");
                         break;
                     }
                     case SERIALscan:{ //
+                    
+                       // send_key("1");
 						printf("SERIALscan\n");
                         
                         break;
                     }
                     case SERIALas:{//cd mix
 						printf("SERIALas\n");
+						
+                        //send_key("1");
                         //system("mpc random");
                         break;
                     }
@@ -252,6 +267,8 @@ void serial_task(void){
                         break;
                     }
                     case SERIALback:{
+                    	
+                        send_key("Escape");
 						printf("SERIALback\n", backcount);
 
                         if(backcount>0) backcount--;
@@ -260,6 +277,7 @@ void serial_task(void){
                     }
                     case SERIALeject:{
 						printf("SERIALeject\n");
+                        send_key("del");
                        
                         break;
                     }
@@ -276,6 +294,7 @@ void serial_task(void){
                     }
                     case SERIALtraffic:{
 						printf("SERIALtraffic\n");
+                        send_key("F1");
                         
                         break;
                     }
@@ -286,11 +305,13 @@ void serial_task(void){
                     }
                     case SERIALplus:{
 						printf("SERIALplus\n");
+                        send_key("Page_up");
 
                         break;
                     }
                     case SERIALminus:{
 						printf("SERIALminus\n");
+                        send_key("Page_down");
 
                         break;
                     }
@@ -327,15 +348,17 @@ void serial_task(void){
 
 
 int main (void){
-	
-	
-	xdo_t *xdo = xdo_new(NULL);
-	xdo_keysequence(xdo, CURRENTWINDOW, "A", 0);
+
+	xdo = xdo_new(":0.0"); 
+	search.winname = "Navit"; 
+	search.winclassname = "Navit"; 
+	search.winclass = "Navit"; 
+	search.require = SEARCH_ANY; 
+	search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
+	search.max_depth = -1; 
 	
 	if (wiringPiSetupGpio () == -1)
 		return 1 ;
-	
-	
 	
 	pinMode(READY_PIN, OUTPUT);
 	pinMode(ACTIVE_PIN, OUTPUT);
@@ -347,7 +370,6 @@ int main (void){
         printf("error opening /dev/ttyAMA0!\nexiting....");
         exit(1);
     }
-
     
 	int cnt = 0;
 	for (;;){
@@ -356,6 +378,8 @@ int main (void){
 		if(cnt == 8){
 			cnt = 0;
 			if(digitalRead(SHUTDOWN_PIN)){
+				system("mpc pause");
+				delay (250);
 				system("sudo shutdown -h now");
 			}
 		}
