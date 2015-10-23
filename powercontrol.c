@@ -44,11 +44,26 @@ before running it.
 
 
 /*
-int main() {
-  xdo_t *xdo = xdo_new(NULL);
-  xdo_keysequence(xdo, CURRENTWINDOW, "A", 0);
-  return  0;
-}
+
+Window *window; 
+xdo_t *xdo; 
+xdo_search_t search = {0}; 
+int numResults = 0; 
+
+xdo = xdo_new(":0.0"); 
+search.winname = "Mozilla Firefox"; 
+search.winclassname = "Mozilla Firefox"; 
+search.winclass = "Mozilla Firefox"; 
+search.require = SEARCH_ANY; 
+search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
+search.max_depth = -1; 
+
+xdo_window_search(xdo, &search, &window, &numResults); 
+printf("Found %d windows.\n", numResults); 
+if (numResults > 0) { 
+xdo_keysequence(xdo, *window, "ctrl+l", 100000); 
+} 
+
 */
  
 #include <stdio.h>
