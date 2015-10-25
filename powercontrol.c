@@ -58,13 +58,13 @@ int numResults = 0;
 
 void send_key(char* key){
 	if (numResults > 0) { 
-		xdo_keysequence(xdo, *window, key, 10); 
+		xdo_send_keysequence_window(xdo, *window, key, 10); 
 	} 
 }
 
 void serial_task(void){
-	if(numResult < 1){
-		xdo_window_search(xdo, &search, &window, &numResults);
+	if(numResults < 1){
+		xdo_search_windows(xdo, &search, &window, &numResults);
 		printf("Found %d windows.\n", numResults); 
 	}
    
@@ -158,7 +158,7 @@ void serial_task(void){
 						printf("SERIAL_3\n");
                         //system("mpc repeat");
                         
-                        //send_key("3");
+                        send_key("F1");
                         break;
                     }
                     case SERIAL_4:{//prev artist
@@ -206,7 +206,7 @@ void serial_task(void){
                         break;
                     }
                     case SERIALtone:{
-						printf("SERIALtone\n", backcount);
+						printf("SERIALtone%i\n", backcount);
                         if(backcount>0){
                             backcount = 0;
                         }else{
@@ -222,7 +222,7 @@ void serial_task(void){
                     case SERIALback:{
                     	
                         send_key("Escape");
-						printf("SERIALback\n", backcount);
+						printf("SERIALback%i\n", backcount);
 
                         if(backcount>0) backcount--;
 
@@ -321,7 +321,7 @@ int main (void){
 	ser = serialOpen ("/dev/ttyAMA0", 38400);
 	if(ser == -1){
         printf("error opening /dev/ttyAMA0!\nexiting....");
-        exit(1);
+        //exit 1;
     }
     
 	int cnt = 0;
