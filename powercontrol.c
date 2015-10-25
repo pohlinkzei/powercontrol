@@ -321,7 +321,7 @@ int main (void){
 	ser = serialOpen ("/dev/ttyAMA0", 38400);
 	if(ser == -1){
         printf("error opening /dev/ttyAMA0!\nexiting....");
-        //exit 1;
+        return 1;
     }
     
 	int cnt = 0;
@@ -338,6 +338,6 @@ int main (void){
 		}
 		delay (75);// mS
 	}
-  return 0;
+  return -1;
 }
 
