@@ -39,7 +39,7 @@
 #define SERIALminus '-'
 
 #define SHUTDOWN_PIN 17
-#define ACTIVE_PIN 18
+//#define ACTIVE_PIN 18
 #define READY_PIN 27
 
 int ser;
@@ -73,7 +73,7 @@ void serial_task(void){
         serialPutchar(ser, rx);
 		//printf("Taste: %x\n",rx);
         if(rx != '0'){
-            printf("Taste: %c\n",rx);
+            printf("Taste: %c,%i\n",rx,rx);
         }
         if(rx == 0xFF){// radio ausgeschaltet?
             ff_count++;
@@ -124,23 +124,25 @@ void serial_task(void){
                         break;
                     }
                     //*/
+                    case SERIALlight:{
+						printf("SERIALlight\n");
+						send_key("l");
+						break;
+					}
                     case SERIALenter:{
 						printf("SERIALenter\n");
 						send_key("Return");
-                        system("mpc toggle");
-
-
                         break;
                     }
 
                     case SERIALnext:{
 						printf("SERIALnext\n");
-                        system("mpc next");
+                        send_key("F2");
                         break;
                     }
                     case SERIALprev:{
 						printf("SERIALprev\n");
-                        system("mpc prev");
+                        send_key("F3");
                         break;
                     }
                     case SERIAL_1:{//prev album
@@ -176,23 +178,23 @@ void serial_task(void){
                         //CurrentPlayList = next_artist(CurrentPlayList);
                         break;
                     }
-                    case SERIAL_6:{ // single
+                    case SERIAL_6:{ // mute navit speech output (i.e. toggle anouncer)
 						printf("SERIAL_6\n");
-                        //send_key("1");
+                        send_key("T"); 
                         //system("mpc single");
                         break;
                     }
                     case SERIALscan:{ //
                     
-                       // send_key("1");
+                       
 						printf("SERIALscan\n");
-                        
+                        send_key("F12");
                         break;
                     }
                     case SERIALas:{//cd mix
 						printf("SERIALas\n");
 						
-                        //send_key("1");
+                        send_key("%");
                         //system("mpc random");
                         break;
                     }
@@ -236,13 +238,13 @@ void serial_task(void){
                     }
                     case SERIALflag:{
 						printf("SERIALflag\n");
-
+						send_key("$");
                         
                         break;
                     }
                     case SERIALnavi:{
 						printf("SERIALnavi\n");
-                       
+                        send_key("§");
                         break;
                     }
                     case SERIALtraffic:{
@@ -253,7 +255,7 @@ void serial_task(void){
                     }
                     case SERIALtim:{
 						printf("SERIALtim\n");
-                        
+                        system("mpc toggle");
                         break;
                     }
                     case SERIALplus:{
@@ -281,7 +283,9 @@ void serial_task(void){
         if(ff_count > 10){
             // save playlist!
             system("mpc pause");
-            digitalWrite(ACTIVE_PIN, LOW);
+            //we use dtoverlay feature of the raspberry pi to drive this pin
+            //so we do not need this anymore 
+            //digitalWrite(ACTIVE_PIN, LOW);
             digitalWrite(READY_PIN, HIGH);
             status = status_off;
             printf("Status: OFF!\n");
@@ -314,9 +318,17 @@ int main (void){
 		return 1 ;
 	
 	pinMode(READY_PIN, OUTPUT);
-	pinMode(ACTIVE_PIN, OUTPUT);
+	//we use dtoverlay feature of the raspberry pi to drive this pin
+	//dtoverlay=gpio-poweroff,gpiopin=18
+	//so we do not need this anymore 
+	//pinMode(ACTIVE_PIN, OUTPUT);
+	//digitalWrite(ACTIVE_PIN, HIGH);
+	
+	// we use the shutdoun pin to catch the poweroff signal from the
+	// interface board
 	pinMode(SHUTDOWN_PIN, INPUT);
-	digitalWrite(ACTIVE_PIN, HIGH);
+	
+	// ready means that we finished
 	digitalWrite(READY_PIN, HIGH);
 	ser = serialOpen ("/dev/ttyAMA0", 38400);
 	if(ser == -1){
