@@ -2,7 +2,7 @@
  * powercontrol on raspberry pi
 
  * Compile with:
- * gcc -lxdo -lwiringpi powercontrol.c
+ * gcc -lxdo -lwiringPi powercontrol.c -o powercontrol
  * https://github.com/jordansissel/xdotool
  */ 
 //git clone git://git.drogon.net/wiringPi
@@ -57,21 +57,28 @@ xdo_search_t search = {0};
 int numResults = 0;
 
 void send_key(char* key){
+	int i;
 	if (numResults > 0) { 
-		xdo_send_keysequence_window(xdo, *window, key, 10); 
+		for(i=0; i<numResults; i++){
+			xdo_send_keysequence_window(xdo, window[i], key, 10); 
+		}
 	} 
 }
 
 void serial_task(void){
+	//*
 	if(numResults < 1){
 		xdo_search_windows(xdo, &search, &window, &numResults);
 		printf("Found %d windows.\n", numResults); 
 	}
-   
+	//*/
     if(serialDataAvail(ser)>0){
         unsigned char rx = serialGetchar(ser);
         serialPutchar(ser, rx);
-		//printf("Taste: %x\n",rx);
+        /*if(rx){
+			printf("Taste: %c,%i\n",rx,rx);
+			return;
+		}*/
         if(rx != '0'){
             printf("Taste: %c,%i\n",rx,rx);
         }
@@ -260,13 +267,13 @@ void serial_task(void){
                     }
                     case SERIALplus:{
 						printf("SERIALplus\n");
-                        send_key("Page_up");
+                        send_key("Page_Up");
 
                         break;
                     }
                     case SERIALminus:{
 						printf("SERIALminus\n");
-                        send_key("Page_down");
+                        send_key("Page_Down");
 
                         break;
                     }
@@ -292,12 +299,6 @@ void serial_task(void){
             return;
         }
         no_ser_count = 0;
-    }else{
-        no_ser_count++;
-        if(no_ser_count == 400){
-            //we are idle? no info from navi? try to reactivate it.
-            //serialPutchar(ser, 0xFF);
-        }
     }
 }
 
@@ -311,7 +312,7 @@ int main (void){
 	search.winclassname = "Navit"; 
 	search.winclass = "Navit"; 
 	search.require = SEARCH_ANY; 
-	search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
+	search.searchmask = SEARCH_NAME;// | SEARCH_CLASS | SEARCH_CLASSNAME; 
 	search.max_depth = -1; 
 	
 	if (wiringPiSetupGpio () == -1)
@@ -348,7 +349,7 @@ int main (void){
 				system("sudo shutdown -h now");
 			}
 		}
-		delay (75);// mS
+		delay (15);// mS
 	}
   return -1;
 }
