@@ -144,12 +144,12 @@ void serial_task(void){
 
                     case SERIALnext:{
 						printf("SERIALnext\n");
-                        send_key("F2");
+                        send_key("F3");
                         break;
                     }
                     case SERIALprev:{
 						printf("SERIALprev\n");
-                        send_key("F3");
+                        send_key("F2");
                         break;
                     }
                     case SERIAL_1:{//prev album
@@ -312,7 +312,7 @@ int main (void){
 	search.winclassname = "Navit"; 
 	search.winclass = "Navit"; 
 	search.require = SEARCH_ANY; 
-	search.searchmask = SEARCH_NAME;// | SEARCH_CLASS | SEARCH_CLASSNAME; 
+	search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
 	search.max_depth = -1; 
 	
 	if (wiringPiSetupGpio () == -1)
