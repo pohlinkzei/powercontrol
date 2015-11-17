@@ -39,7 +39,7 @@
 #define SERIALminus '-'
 
 #define SHUTDOWN_PIN 17
-//#define ACTIVE_PIN 18
+#define ACTIVE_PIN 18
 #define READY_PIN 27
 
 int ser;
@@ -55,6 +55,7 @@ Window *window;
 xdo_t *xdo; 
 xdo_search_t search = {0};
 int numResults = 0;
+int xdo_cnt = 0;
 
 void send_key(char* key){
 	int i;
@@ -68,9 +69,16 @@ void send_key(char* key){
 void serial_task(void){
 	//*
 	if(numResults < 1){
+		sleep(1);
 		xdo_search_windows(xdo, &search, &window, &numResults);
 		printf("Found %d windows.\n", numResults); 
-	}
+	}else{
+		if(1000 == xdo_cnt++){
+			xdo_cnt = 0;
+			numResults = 0;
+			system("date");
+		}
+	} 
 	//*/
     if(serialDataAvail(ser)>0){
         unsigned char rx = serialGetchar(ser);
@@ -239,7 +247,7 @@ void serial_task(void){
                     }
                     case SERIALeject:{
 						printf("SERIALeject\n");
-                        send_key("del");
+                        send_key("Delete");
                        
                         break;
                     }
@@ -267,13 +275,13 @@ void serial_task(void){
                     }
                     case SERIALplus:{
 						printf("SERIALplus\n");
-                        send_key("Page_Up");
+						send_key("Page_Down");
 
                         break;
                     }
                     case SERIALminus:{
 						printf("SERIALminus\n");
-                        send_key("Page_Down");
+                        send_key("Page_Up");
 
                         break;
                     }
@@ -308,11 +316,12 @@ void serial_task(void){
 int main (void){
 
 	xdo = xdo_new(":0.0"); 
+	
 	search.winname = "Navit"; 
-	search.winclassname = "Navit"; 
-	search.winclass = "Navit"; 
+	//search.winclassname = "Navit"; 
+	//search.winclass = "Navit"; 
 	search.require = SEARCH_ANY; 
-	search.searchmask = SEARCH_NAME | SEARCH_CLASS | SEARCH_CLASSNAME; 
+	search.searchmask =  SEARCH_NAME ;//| SEARCH_CLASS | SEARCH_CLASSNAME; 
 	search.max_depth = -1; 
 	
 	if (wiringPiSetupGpio () == -1)
@@ -322,8 +331,8 @@ int main (void){
 	//we use dtoverlay feature of the raspberry pi to drive this pin
 	//dtoverlay=gpio-poweroff,gpiopin=18
 	//so we do not need this anymore 
-	//pinMode(ACTIVE_PIN, OUTPUT);
-	//digitalWrite(ACTIVE_PIN, HIGH);
+	pinMode(ACTIVE_PIN, OUTPUT);
+	digitalWrite(ACTIVE_PIN, HIGH);
 	
 	// we use the shutdoun pin to catch the poweroff signal from the
 	// interface board
