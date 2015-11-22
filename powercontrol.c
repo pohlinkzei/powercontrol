@@ -64,7 +64,7 @@ void send_key(char* key){
 		//for(i=0; i<numResults; i++){
 			//printf("i: %i = %s\n", i,&window[i]);
 			char command[100] = {0,};
-			sprintf(command, "xdotool key %s",key);//--window %s
+			sprintf(command, "xdotool --window %s key %s", &window[i], key);//--window %s
 			system(command);
 			//xdo_send_keysequence_window(xdo, window[i], key, 10); 
 		//}
