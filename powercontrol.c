@@ -10,9 +10,11 @@
 
  
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <wiringPi.h>
 #include <wiringSerial.h>
-#include <xdo.h>
+//#include <xdo.h>
 
 #define SERIAL_1  '1'
 #define SERIAL_2  '2'
@@ -51,32 +53,51 @@ int status;
 int status_off;
 int no_ser_count = 0;
 
-Window *window; 
-xdo_t *xdo; 
-xdo_search_t search = {0};
-int numResults = 0;
+long int winID = -1;
+char window[24][24];
+int numResults = 1;
 int xdo_cnt = 0;
 
 void send_key(char* key){
-	int i;
-	if (numResults > 0) { 
-		for(i=0; i<numResults; i++){
-			xdo_send_keysequence_window(xdo, window[i], key, 10); 
-		}
+	int i=0;
+	if (numResults > 0 && backcount == 0) { 
+		//for(i=0; i<numResults; i++){
+			//printf("i: %i = %s\n", i,&window[i]);
+			char command[100] = {0,};
+			sprintf(command, "xdotool key %s",key);//--window %s
+			system(command);
+			//xdo_send_keysequence_window(xdo, window[i], key, 10); 
+		//}
 	} 
 }
+
+void getNavitWindow(void){
+	FILE *fp = popen("xdotool search Navit", "r");
+	char response[32];
+	char tmp;
+	numResults = 0;
+	if(fp == NULL){
+		printf("Error: Failed to run command!");
+		return;
+	}
+	while(fgets(response, sizeof(response), fp) != NULL){
+		strtok(response, "\n");
+		strcpy(window[numResults], response ); 
+		numResults++;
+	}
+	
+}
+
 
 void serial_task(void){
 	//*
 	if(numResults < 1){
-		sleep(1);
-		xdo_search_windows(xdo, &search, &window, &numResults);
+		getNavitWindow();
 		printf("Found %d windows.\n", numResults); 
 	}else{
 		if(1000 == xdo_cnt++){
 			xdo_cnt = 0;
 			numResults = 0;
-			system("date");
 		}
 	} 
 	//*/
@@ -112,33 +133,49 @@ void serial_task(void){
                 }else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
                     system("mpc play");
                 }
+                
+               
+				if(rx == 0x01){//String zum tacho - mp3player inaktiv
+					int i;
+					for(i = 0;i<17;i++){
+						
+						rx = serialGetchar(ser);
+						if(rx==0){
+							
+							int j = 0;
+							for(;j<17;j++){
+								radio_string[i] = 0x00;
+							}
+						}else{
+							radio_string[i] = rx;
+							printf("%c",rx);
+						}
 
+					}
+					printf("Radio: %s\n",radio_string);
+					// TODO: an Navit übergeben, damit radio_string an MFA gesendet werden kann
+					rx = 0x01;
+					serialFlush(ser);
+					
+									 
+					return;
+				}
+                
+				if(rx_old=='0'){
 
                 switch(rx){
                     //*
-                    int i;
-                    case 0x01:{//String zum tacho - mp3player inaktiv
-                        for(i = 0;i<17;i++){
-							int pos = 0;
-                            rx = serialGetchar(ser);
-                            if(rx==0){
-                                printf("%s\n",radio_string);
-								int j = 0;
-                                for(;j<17;j++){
-									radio_string[i] = 0x00;
-								}
-                            }else{
-                                radio_string[pos++] = rx;
-                            }
-
+                    
+                    //*/
+                    case SERIALaudio:
+                    case SERIALtone:{
+                        if(backcount>0){
+                            backcount = 0;
+                        }else{
+                            backcount = 3;
                         }
-						// TODO: an Navit übergeben, damit radio_string an MFA gesendet werden kann
-                        rx = 0x01;
-                        serialFlush(ser);
-                        //return;
                         break;
                     }
-                    //*/
                     case SERIALlight:{
 						printf("SERIALlight\n");
 						send_key("l");
@@ -173,8 +210,6 @@ void serial_task(void){
                     }
                     case SERIAL_3:{//repeat
 						printf("SERIAL_3\n");
-                        //system("mpc repeat");
-                        
                         send_key("F1");
                         break;
                     }
@@ -182,67 +217,37 @@ void serial_task(void){
 						printf("SERIAL_4\n");
 						
                         send_key("F6");
-                        //system("mpc clear");
-                        //CurrentPlayList = prev_artist(CurrentPlayList);
                         break;
                     }
                     case SERIAL_5:{//next artist
 						printf("SERIAL_5\n");
                         send_key("F7");
-                        //system("mpc clear");
-                        //CurrentPlayList = next_artist(CurrentPlayList);
                         break;
                     }
                     case SERIAL_6:{ // mute navit speech output (i.e. toggle anouncer)
 						printf("SERIAL_6\n");
                         send_key("T"); 
-                        //system("mpc single");
                         break;
                     }
-                    case SERIALscan:{ //
-                    
-                       
+                    case SERIALscan:{ 
 						printf("SERIALscan\n");
                         send_key("F12");
                         break;
                     }
                     case SERIALas:{//cd mix
 						printf("SERIALas\n");
-						
-                        send_key("%");
-                        //system("mpc random");
+						send_key("percent");
                         break;
                     }
-                    case SERIALaudio:{
-						printf("SERIALaudio %i\n", backcount);
-                        if(backcount>0){
-                            backcount = 0;
-                        }else{
-                            backcount = 3;
-                        }
-                        break;
-                    }
-                    case SERIALtone:{
-						printf("SERIALtone%i\n", backcount);
-                        if(backcount>0){
-                            backcount = 0;
-                        }else{
-                            backcount = 3;
-                        }
-                        break;
-                    }
+                    
                     case SERIALinfo:{
 						printf("SERIALinfo\n");
-                    
-                        break;
+						break;
                     }
                     case SERIALback:{
-                    	
                         send_key("Escape");
 						printf("SERIALback%i\n", backcount);
-
                         if(backcount>0) backcount--;
-
                         break;
                     }
                     case SERIALeject:{
@@ -253,13 +258,13 @@ void serial_task(void){
                     }
                     case SERIALflag:{
 						printf("SERIALflag\n");
-						send_key("$");
+						send_key("dollar");
                         
                         break;
                     }
                     case SERIALnavi:{
 						printf("SERIALnavi\n");
-                        send_key("§");
+                        send_key("numbersign");
                         break;
                     }
                     case SERIALtraffic:{
@@ -282,16 +287,15 @@ void serial_task(void){
                     case SERIALminus:{
 						printf("SERIALminus\n");
                         send_key("Page_Up");
-
-                        break;
+						break;
                     }
                     default:{
-						printf("default\n");
+						//printf("default\n");
                         serialFlush(ser);
                         break;
                     }
                 }
-            }
+            }}
             serialFlush(ser);
             rx_old = rx;
         }
@@ -315,15 +319,6 @@ void serial_task(void){
 
 int main (void){
 
-	xdo = xdo_new(":0.0"); 
-	
-	search.winname = "Navit"; 
-	//search.winclassname = "Navit"; 
-	//search.winclass = "Navit"; 
-	search.require = SEARCH_ANY; 
-	search.searchmask =  SEARCH_NAME ;//| SEARCH_CLASS | SEARCH_CLASSNAME; 
-	search.max_depth = -1; 
-	
 	if (wiringPiSetupGpio () == -1)
 		return 1 ;
 	
@@ -346,6 +341,7 @@ int main (void){
         return 1;
     }
     
+    system("xdotool mousemove 319 233");
 	int cnt = 0;
 	for (;;){
 		cnt++;
