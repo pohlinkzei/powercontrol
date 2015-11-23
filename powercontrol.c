@@ -55,24 +55,23 @@ int no_ser_count = 0;
 
 long int winID = -1;
 char window[24][24];
-int numResults = 1;
+int numResults = 0;
 int xdo_cnt = 0;
 
 void send_key(char* key){
 	int i=0;
 	if (numResults > 0 && backcount == 0) { 
-		//for(i=0; i<numResults; i++){
-			//printf("i: %i = %s\n", i,&window[i]);
+		for(i=0; i<numResults; i++){
 			char command[100] = {0,};
-			sprintf(command, "xdotool --window %s key %s", &window[i], key);//--window %s
+			sprintf(command, "xdotool key --window %s %s", window[i], key);//--window %s
 			system(command);
 			//xdo_send_keysequence_window(xdo, window[i], key, 10); 
-		//}
+		}
 	} 
 }
 
 void getNavitWindow(void){
-	FILE *fp = popen("xdotool search Navit", "r");
+	FILE *fp = popen("xdotool search --name Navit", "r");
 	char response[32];
 	char tmp;
 	numResults = 0;
@@ -101,227 +100,195 @@ void serial_task(void){
 		}
 	} 
 	//*/
-    if(serialDataAvail(ser)>0){
-        unsigned char rx = serialGetchar(ser);
-        serialPutchar(ser, rx);
-        /*if(rx){
+	if(serialDataAvail(ser)>0){
+		unsigned char rx = serialGetchar(ser);
+		serialPutchar(ser, rx);
+		/*if(rx){
 			printf("Taste: %c,%i\n",rx,rx);
 			return;
-		}*/
-        if(rx != '0'){
-            printf("Taste: %c,%i\n",rx,rx);
-        }
-        if(rx == 0xFF){// radio ausgeschaltet?
-            ff_count++;
-            printf("FF_count: %i\n",ff_count);
-        }else{
-            ff_count = 0;
+		}* /
+		if(rx != '0'){
+			printf("Taste: %c,%i\n",rx,rx);
+		}
+		//*/
+		if(rx != rx_old){
+			if(rx == 0x01){//rpimfdinterface startete den pi nach zv auf, radio ist aber noch nicht eingeschaltet - wir warten.
+				system("mpc pause");
+				rx_old = rx;
+				sleep(1);
+			}
+			if(rx == '0' && rx_old == 0x01){// jetzt ist das radio an - los
+				system("mpc play");
+			}
+			if(rx == 0x02){//mfd hat AUX INFO TP gesendet (Verkehrsfunk) - wir warten.
+				system("mpc pause");
+				rx_old = rx;
+				sleep(1);
+			}else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
+				system("mpc play");
+			}
+			if(rx == 0x01){//String zum tacho - mp3player inaktiv
+				rx_old = rx;
+				int i;
+				for(i = 0;i<17;i++){
+					rx = serialGetchar(ser);
+					if(rx==0){
 
-            if(rx != rx_old){
-
-
-                if(rx == 0x01){//rpimfdinterface startete den pi nach zv auf, radio ist aber noch nicht eingeschaltet - wir warten.
-                    system("mpc pause");
-                    sleep(1);
-                }
-                if(rx == '0' && rx_old == 0x01){// jetzt ist das radio an - los
-                    system("mpc play");
-                }
-                if(rx == 0x02){//mfd hat AUX INFO TP gesendet (Verkehrsfunk) - wir warten.
-                    system("mpc pause");
-                    sleep(1);
-                }else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
-                    system("mpc play");
-                }
-                
-               
-				if(rx == 0x01){//String zum tacho - mp3player inaktiv
-					int i;
-					for(i = 0;i<17;i++){
-						
-						rx = serialGetchar(ser);
-						if(rx==0){
-							
-							int j = 0;
-							for(;j<17;j++){
-								radio_string[i] = 0x00;
-							}
-						}else{
-							radio_string[i] = rx;
-							printf("%c",rx);
+						int j = 0;
+						for(;j<17;j++){
+							radio_string[i] = 0x00;
 						}
-
+					}else{
+						radio_string[i] = rx;
+						printf("%c",rx);
 					}
-					printf("Radio: %s\n",radio_string);
-					// TODO: an Navit übergeben, damit radio_string an MFA gesendet werden kann
-					rx = 0x01;
-					serialFlush(ser);
-					
-									 
-					return;
 				}
-                
-				if(rx_old=='0'){
-
-                switch(rx){
-                    //*
-                    
-                    //*/
-                    case SERIALaudio:
-                    case SERIALtone:{
-                        if(backcount>0){
-                            backcount = 0;
-                        }else{
-                            backcount = 3;
-                        }
-                        break;
-                    }
-                    case SERIALlight:{
+				printf("Radio: %s\n",radio_string);
+				FILE *file = fopen("/tmp/radio","rw");
+				fprintf(file, radio_string);
+				rx = 0x01;
+				serialFlush(ser); 
+				return;
+			}
+			if(rx_old=='0'){
+				switch(rx){
+					case SERIALaudio:
+					case SERIALtone:{
+						if(backcount>0){
+							backcount = 0;
+						}else{
+							backcount = 3;
+						}
+						break;
+					}
+					case SERIALlight:{
 						printf("SERIALlight\n");
 						send_key("l");
 						break;
 					}
-                    case SERIALenter:{
+					case SERIALenter:{
 						printf("SERIALenter\n");
 						send_key("Return");
-                        break;
-                    }
-
-                    case SERIALnext:{
+						break;
+					}
+					case SERIALnext:{
 						printf("SERIALnext\n");
-                        send_key("F3");
-                        break;
-                    }
-                    case SERIALprev:{
+						send_key("F3");
+						break;
+					}
+					case SERIALprev:{
 						printf("SERIALprev\n");
-                        send_key("F2");
-                        break;
-                    }
-                    case SERIAL_1:{//prev album
+						send_key("F2");
+						break;
+					}
+					case SERIAL_1:{//prev album
 						printf("SERIAL_1\n");
-                        send_key("F4");
-                        break;
-                    }
-                    case SERIAL_2:{//next album
+						send_key("F4");
+						break;
+					}
+					case SERIAL_2:{//next album
 						printf("SERIAL_2\n");
-                        send_key("F5");
-                        
-                        break;
-                    }
-                    case SERIAL_3:{//repeat
+						send_key("F5");
+						
+						break;
+					}
+					case SERIAL_3:{//repeat
 						printf("SERIAL_3\n");
-                        send_key("F1");
-                        break;
-                    }
-                    case SERIAL_4:{//prev artist
+						send_key("F1");
+						break;
+					}
+					case SERIAL_4:{//prev artist
 						printf("SERIAL_4\n");
 						
-                        send_key("F6");
-                        break;
-                    }
-                    case SERIAL_5:{//next artist
+						send_key("F6");
+						break;
+					}
+					case SERIAL_5:{//next artist
 						printf("SERIAL_5\n");
-                        send_key("F7");
-                        break;
-                    }
-                    case SERIAL_6:{ // mute navit speech output (i.e. toggle anouncer)
+						send_key("F7");
+						break;
+					}
+					case SERIAL_6:{ // mute navit speech output (i.e. toggle anouncer)
 						printf("SERIAL_6\n");
-                        send_key("T"); 
-                        break;
-                    }
-                    case SERIALscan:{ 
+						send_key("T"); 
+						break;
+					}
+					case SERIALscan:{ 
 						printf("SERIALscan\n");
-                        send_key("F12");
-                        break;
-                    }
-                    case SERIALas:{//cd mix
+						send_key("F12");
+						break;
+					}
+					case SERIALas:{//cd mix
 						printf("SERIALas\n");
 						send_key("percent");
-                        break;
-                    }
-                    
-                    case SERIALinfo:{
+						break;
+					}
+					
+					case SERIALinfo:{
 						printf("SERIALinfo\n");
 						break;
-                    }
-                    case SERIALback:{
-                        send_key("Escape");
+					}
+					case SERIALback:{
+						send_key("Escape");
 						printf("SERIALback%i\n", backcount);
-                        if(backcount>0) backcount--;
-                        break;
-                    }
-                    case SERIALeject:{
+						if(backcount>0) backcount--;
+						break;
+					}
+					case SERIALeject:{
 						printf("SERIALeject\n");
-                        send_key("Delete");
-                       
-                        break;
-                    }
-                    case SERIALflag:{
+						send_key("Delete");
+					   
+						break;
+					}
+					case SERIALflag:{
 						printf("SERIALflag\n");
 						send_key("dollar");
-                        
-                        break;
-                    }
-                    case SERIALnavi:{
+						
+						break;
+					}
+					case SERIALnavi:{
 						printf("SERIALnavi\n");
-                        send_key("numbersign");
-                        break;
-                    }
-                    case SERIALtraffic:{
+						send_key("numbersign");
+						break;
+					}
+					case SERIALtraffic:{
 						printf("SERIALtraffic\n");
-                        send_key("F1");
-                        
-                        break;
-                    }
-                    case SERIALtim:{
+						send_key("F1");
+						
+						break;
+					}
+					case SERIALtim:{
 						printf("SERIALtim\n");
-                        system("mpc toggle");
-                        break;
-                    }
-                    case SERIALplus:{
+						//system("mpc toggle");
+						break;
+					}
+					case SERIALplus:{
 						printf("SERIALplus\n");
 						send_key("Page_Down");
-
-                        break;
-                    }
-                    case SERIALminus:{
-						printf("SERIALminus\n");
-                        send_key("Page_Up");
 						break;
-                    }
-                    default:{
+					}
+					case SERIALminus:{
+						printf("SERIALminus\n");
+						send_key("Page_Up");
+						break;
+					}
+					default:{
 						//printf("default\n");
-                        serialFlush(ser);
-                        break;
-                    }
-                }
-            }}
-            serialFlush(ser);
-            rx_old = rx;
-        }
-        if(ff_count > 10){
-            // save playlist!
-            system("mpc pause");
-            //we use dtoverlay feature of the raspberry pi to drive this pin
-            //so we do not need this anymore 
-            //digitalWrite(ACTIVE_PIN, LOW);
-            digitalWrite(READY_PIN, HIGH);
-            status = status_off;
-            printf("Status: OFF!\n");
-            return;
-        }
-        no_ser_count = 0;
-    }
+						serialFlush(ser);
+						break;
+					}
+				}
+			}
+		}
+		serialFlush(ser);
+		rx_old = rx;
+	}
 }
-
-
-
 
 int main (void){
 
 	if (wiringPiSetupGpio () == -1)
 		return 1 ;
-	
 	pinMode(READY_PIN, OUTPUT);
 	//we use dtoverlay feature of the raspberry pi to drive this pin
 	//dtoverlay=gpio-poweroff,gpiopin=18
@@ -341,7 +308,7 @@ int main (void){
         return 1;
     }
     
-    system("xdotool mousemove 319 233");
+    system("xdotool mousemove 329 233");
 	int cnt = 0;
 	for (;;){
 		cnt++;
@@ -356,6 +323,6 @@ int main (void){
 		}
 		delay (15);// mS
 	}
-  return -1;
+	return -1;
 }
 
