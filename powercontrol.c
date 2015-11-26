@@ -163,7 +163,7 @@ void serial_task(void){
 					}
 					case SERIALlight:{
 						printf("SERIALlight\n");
-						send_key("l");
+						send_key("L");
 						break;
 					}
 					case SERIALenter:{
