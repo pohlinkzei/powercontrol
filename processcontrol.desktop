@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Name=processcontrol
+Name[de_DE]=processcontrol
+Exec=powercontrol/processcontrol.sh
+Comment[de_DE]=
+StartupNotify=true
+Terminal=false
