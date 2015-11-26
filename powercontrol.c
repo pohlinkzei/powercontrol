@@ -106,7 +106,7 @@ void serial_task(void){
 		/*if(rx){
 			printf("Taste: %c,%i\n",rx,rx);
 			return;
-		}* /
+		}*/
 		if(rx != '0'){
 			printf("Taste: %c,%i\n",rx,rx);
 		}
