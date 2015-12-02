@@ -264,12 +264,18 @@ void serial_task(void){
 					}
 					case SERIALplus:{
 						printf("SERIALplus\n");
-						send_key("Page_Down");
+						int count = serialGetchar(ser);
+						while(count--){
+							send_key("Page_Down");
+						}
 						break;
 					}
 					case SERIALminus:{
 						printf("SERIALminus\n");
-						send_key("Page_Up");
+						int count = serialGetchar(ser);
+						while(count--){
+							send_key("Page_Up");
+						}
 						break;
 					}
 					default:{
