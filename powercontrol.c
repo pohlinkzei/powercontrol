@@ -117,15 +117,16 @@ void serial_task(void){
 				rx_old = rx;
 				sleep(1);
 			}
-			if(rx == '0' && rx_old == 0x01){// jetzt ist das radio an - los
+			if(rx == '0' && (rx_old == 0x01 || rx_old == 0x02)){// jetzt ist das radio an und der Modus is AUX - los
 				system("mpc play");
+				delay(300);
+				system("mpc play");
+				
 			}
 			if(rx == 0x02){//mfd hat AUX INFO TP gesendet (Verkehrsfunk) - wir warten.
 				system("mpc pause");
 				rx_old = rx;
 				sleep(1);
-			}else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
-				system("mpc play");
 			}
 			if(rx == 0x01){//String zum tacho - mp3player inaktiv
 				rx_old = rx;
