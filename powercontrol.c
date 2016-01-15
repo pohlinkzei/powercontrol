@@ -45,7 +45,7 @@
 #define READY_PIN 27
 
 int ser;
-char radio_string[17] = {0,};
+char radio_string[20] = {0,};
 int ff_count = 0;
 unsigned char rx_old = 0x00;
 int backcount = 0;
@@ -135,7 +135,7 @@ void serial_task(void){
 
 						int j = 0;
 						for(;j<17;j++){
-							radio_string[i] = 0x00;
+							radio_string[j] = 0x00;
 						}
 					}else{
 						radio_string[i] = rx;
@@ -143,8 +143,12 @@ void serial_task(void){
 					}
 				}
 				printf("Radio: %s\n",radio_string);
-				FILE *file = fopen("/tmp/radio","rw");
-				fprintf(file, radio_string);
+				FILE *file = fopen("radio.txt","rw");
+				if( file != NULL ){
+					printf("Radio: %s\n",radio_string);
+					fprintf(file, radio_string);
+					fclose(file);
+				}
 				rx = 0x01;
 				serialFlush(ser); 
 				return;
