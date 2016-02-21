@@ -113,19 +113,23 @@ void serial_task(void){
 		//*/
 		if(rx != rx_old){
 			if(rx == 0x01){//rpimfdinterface startete den pi nach zv auf, radio ist aber noch nicht eingeschaltet - wir warten.
-				system("mpc pause");
+				//system("mpc pause");
+				send_key("F8");
 				rx_old = rx;
 				sleep(1);
 			}
 			if(rx == '0' && rx_old == 0x01){// jetzt ist das radio an - los
 				system("mpc play");
+				send_key("F1");
 			}
 			if(rx == 0x02){//mfd hat AUX INFO TP gesendet (Verkehrsfunk) - wir warten.
-				system("mpc pause");
+				//system("mpc pause");
+				send_key("F8");
 				rx_old = rx;
 				sleep(1);
 			}else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
 				system("mpc play");
+				send_key("F1");
 			}
 			if(rx == 0x01){//String zum tacho - mp3player inaktiv
 				rx_old = rx;
