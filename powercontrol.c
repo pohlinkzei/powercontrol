@@ -45,7 +45,7 @@
 #define READY_PIN 27
 
 int ser;
-char radio_string[17] = {0,};
+char radio_string[20] = {0,};
 int ff_count = 0;
 unsigned char rx_old = 0x00;
 int backcount = 0;
@@ -102,7 +102,7 @@ void serial_task(void){
 	//*/
 	if(serialDataAvail(ser)>0){
 		unsigned char rx = serialGetchar(ser);
-		serialPutchar(ser, rx);
+		//serialPutchar(ser, rx);
 		/*if(rx){
 			printf("Taste: %c,%i\n",rx,rx);
 			return;
@@ -111,25 +111,20 @@ void serial_task(void){
 			printf("Taste: %c,%i\n",rx,rx);
 		}
 		//*/
-		if(rx != rx_old){
+		if(rx != rx_old  || (rx=='+' || rx=='-')){
 			if(rx == 0x01){//rpimfdinterface startete den pi nach zv auf, radio ist aber noch nicht eingeschaltet - wir warten.
-				//system("mpc pause");
 				send_key("F8");
 				rx_old = rx;
 				sleep(1);
 			}
-			if(rx == '0' && rx_old == 0x01){// jetzt ist das radio an - los
-				system("mpc play");
+			if(rx == '0' && (rx_old == 0x01 || rx_old == 0x02)){// jetzt ist das radio an und der Modus is AUX - los
+				
 				send_key("F1");
 			}
 			if(rx == 0x02){//mfd hat AUX INFO TP gesendet (Verkehrsfunk) - wir warten.
-				//system("mpc pause");
 				send_key("F8");
 				rx_old = rx;
 				sleep(1);
-			}else if(rx == '0' && rx_old == 0x02){// jetzt ist das radio an - los
-				system("mpc play");
-				send_key("F1");
 			}
 			if(rx == 0x01){//String zum tacho - mp3player inaktiv
 				rx_old = rx;
@@ -140,7 +135,7 @@ void serial_task(void){
 
 						int j = 0;
 						for(;j<17;j++){
-							radio_string[i] = 0x00;
+							radio_string[j] = 0x00;
 						}
 					}else{
 						radio_string[i] = rx;
@@ -148,13 +143,17 @@ void serial_task(void){
 					}
 				}
 				printf("Radio: %s\n",radio_string);
-				FILE *file = fopen("/tmp/radio","rw");
-				fprintf(file, radio_string);
+				FILE *file = fopen("radio.txt","rw");
+				if( file != NULL ){
+					printf("Radio: %s\n",radio_string);
+					fprintf(file, radio_string);
+					fclose(file);
+				}
 				rx = 0x01;
 				serialFlush(ser); 
 				return;
 			}
-			if(rx_old=='0'){
+			if(rx_old=='0' || (rx=='+' || rx=='-')){
 				switch(rx){
 					case SERIALaudio:
 					case SERIALtone:{
@@ -246,7 +245,7 @@ void serial_task(void){
 					}
 					case SERIALflag:{
 						printf("SERIALflag\n");
-						send_key("dollar");
+						//send_key("dollar");
 						
 						break;
 					}
@@ -257,7 +256,7 @@ void serial_task(void){
 					}
 					case SERIALtraffic:{
 						printf("SERIALtraffic\n");
-						send_key("F1");
+						//send_key("F1");
 						
 						break;
 					}
@@ -267,13 +266,19 @@ void serial_task(void){
 						break;
 					}
 					case SERIALplus:{
-						printf("SERIALplus\n");
-						send_key("Page_Down");
+						int count = serialGetchar(ser);
+						printf("SERIALplus\t%i\n", count);
+						do{
+							send_key("Page_Down");
+						}while(--count);
 						break;
 					}
 					case SERIALminus:{
-						printf("SERIALminus\n");
-						send_key("Page_Up");
+						int count = serialGetchar(ser);
+						printf("SERIALminus\t%i\n", count);
+						do{
+							send_key("Page_Up");
+						}while(--count);
 						break;
 					}
 					default:{
