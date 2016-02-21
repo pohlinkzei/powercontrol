@@ -107,6 +107,7 @@ void serial_task(void){
 			printf("Taste: %c,%i\n",rx,rx);
 			return;
 		}*/
+		/*
 		if(rx != '0'){
 			printf("Taste: %c,%i\n",rx,rx);
 		}
@@ -139,13 +140,13 @@ void serial_task(void){
 						}
 					}else{
 						radio_string[i] = rx;
-						printf("%c",rx);
+						//printf("%c",rx);
 					}
 				}
-				printf("Radio: %s\n",radio_string);
+				//printf("Radio: %s\n",radio_string);
 				FILE *file = fopen("radio.txt","rw");
 				if( file != NULL ){
-					printf("Radio: %s\n",radio_string);
+					//printf("Radio: %s\n",radio_string);
 					fprintf(file, radio_string);
 					fclose(file);
 				}
