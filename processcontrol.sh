@@ -8,7 +8,7 @@ then
 	sleep 1
 else
 	echo "Restarting PowerControl"
-	sudo ./powercontrol
+	sudo ./powercontrol &
 	sleep 5
 fi
 sleep 1
