@@ -317,12 +317,11 @@ int main (void){
 		ser = serialOpen ("/dev/ttyS0", 38400); // maybe we are on the pi3
 		if(ser == -1){
         		printf("error opening serial connection\nexiting....\n");
+        		return 1;
 		}else{
 			printf("we are on the pi3....\n");
 		}
-	}
-        return 1;
-    }
+    	}
     
     system("xdotool mousemove 329 233");
 	int cnt = 0;
@@ -338,7 +337,7 @@ int main (void){
 			}
 		}
 		delay (15);// mS
-	}
+	
 	return -1;
 }
 
