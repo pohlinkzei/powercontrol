@@ -314,7 +314,13 @@ int main (void){
 	digitalWrite(READY_PIN, HIGH);
 	ser = serialOpen ("/dev/ttyAMA0", 38400);
 	if(ser == -1){
-        printf("error opening /dev/ttyAMA0!\nexiting....");
+		ser = serialOpen ("/dev/ttyS0", 38400); // maybe we are on the pi3
+		if(ser == -1){
+        		printf("error opening serial connection\nexiting....\n");
+		}else{
+			printf("we are on the pi3....\m");
+		}
+	}
         return 1;
     }
     
