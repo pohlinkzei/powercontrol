@@ -318,7 +318,7 @@ int main (void){
 		if(ser == -1){
         		printf("error opening serial connection\nexiting....\n");
 		}else{
-			printf("we are on the pi3....\m");
+			printf("we are on the pi3....\n");
 		}
 	}
         return 1;
