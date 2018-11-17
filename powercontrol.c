@@ -58,6 +58,14 @@ char window[24][24];
 int numResults = 0;
 int xdo_cnt = 0;
 
+const char dbus_get_length[] = "dbus-send  --print-reply=literal --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:\"length\" | grep variant";
+const char dbus_get_nav_status[] = "dbus-send  --print-reply=literal --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:\"nav_status\" | grep variant";
+const char dbus_get_next_turn[] = "bus-send  --print-reply=literal --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:\"item_type\" | grep variant"
+
+void dbus_task(void){
+    
+}
+
 void send_key(char* key){
 	int i=0;
 	if (numResults > 0 && backcount == 0) { 
@@ -341,3 +349,20 @@ int main (void){
 	return -1;
 }
 
+
+/*
+ dbus-send  --print-reply --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:"length"
+method return time=1542409029.723300 sender=:1.4377 -> destination=:1.4386 serial=12 reply_serial=2
+   string "length"
+   variant       int32 663
+
+dbus-send  --print-reply --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:"nav_status"
+   string "nav_status"
+   variant       int32 4
+ * 
+dbus-send  --print-reply --session --dest=org.navit_project.navit /org/navit_project/navit/default_navit/default_navigation org.navit_project.navit.navigation.get_attr string:"item_type"
+method return time=1542477216.462964 sender=:1.4388 -> destination=:1.4403 serial=17 reply_serial=2
+   string "item_type"
+   variant       string "nav_right_2"
+
+ */
